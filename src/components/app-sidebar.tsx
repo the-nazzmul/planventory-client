@@ -2,10 +2,19 @@
 
 import * as React from "react";
 import {
+  Boxes,
+  ChartColumnIncreasing,
+  ClipboardList,
   LayoutDashboard,
+  ListChecks,
   Package,
+  PackageCheck,
+  RotateCcw,
   Receipt,
   Settings,
+  Shapes,
+  ShoppingCart,
+  Truck,
   Users,
   Warehouse,
 } from "lucide-react";
@@ -20,12 +29,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-
-const user = {
-  name: "Admin",
-  subtitle: "Portfolio Studio",
-  initials: "A",
-};
+import { useAuth } from "@/components/auth-provider";
 
 const navGroups: NavGroup[] = [
   {
@@ -51,6 +55,46 @@ const navGroups: NavGroup[] = [
         url: "/products",
         icon: Package,
       },
+      {
+        title: "Categories",
+        url: "/categories",
+        icon: Shapes,
+      },
+      {
+        title: "Brands",
+        url: "/brands",
+        icon: Boxes,
+      },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      {
+        title: "Orders",
+        url: "/orders",
+        icon: ShoppingCart,
+      },
+      {
+        title: "Returns",
+        url: "/returns",
+        icon: RotateCcw,
+      },
+      {
+        title: "Suppliers",
+        url: "/suppliers",
+        icon: Truck,
+      },
+      {
+        title: "Purchase Orders",
+        url: "/purchase-orders",
+        icon: ClipboardList,
+      },
+      {
+        title: "Stock Movements",
+        url: "/stock-movements",
+        icon: ListChecks,
+      },
     ],
   },
   {
@@ -71,11 +115,29 @@ const navGroups: NavGroup[] = [
         url: "/expenses",
         icon: Receipt,
       },
+      {
+        title: "Finance",
+        url: "/finance",
+        icon: ChartColumnIncreasing,
+      },
+      {
+        title: "Purchase Receive",
+        url: "/purchase-orders/receive",
+        icon: PackageCheck,
+      },
     ],
   },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth();
+  const initials = user?.name
+    ?.split(" ")
+    .map((part) => part.slice(0, 1))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() ?? "U";
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -85,7 +147,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain groups={navGroups} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser
+          user={{
+            name: user?.name ?? "User",
+            subtitle: user?.email ?? "Not authenticated",
+            initials,
+          }}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

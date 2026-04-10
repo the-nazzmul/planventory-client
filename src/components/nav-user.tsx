@@ -25,6 +25,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/components/auth-provider";
+import { useToast } from "@/components/toast-provider";
 
 export function NavUser({
   user,
@@ -37,6 +39,23 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { logout } = useAuth();
+  const { toast } = useToast();
+
+  async function onLogout() {
+    try {
+      await logout();
+      toast({ title: "Logged out", description: "Session ended successfully." });
+      window.location.href = "/login";
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
 
   return (
     <SidebarMenu>
@@ -107,7 +126,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={onLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

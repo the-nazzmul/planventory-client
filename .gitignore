@@ -32,9 +32,18 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
+.env
 
 # vercel
 .vercel
+
+# local planning/architecture docs
+*.plan.md
+PLANVENTORY-ROADMAP.md
+../PLANVENTORY-ROADMAP.md
+../FREELANCE-HANDOFF.md
+../FREELANCE-SCOPES.md
 
 # typescript
 *.tsbuildinfo
