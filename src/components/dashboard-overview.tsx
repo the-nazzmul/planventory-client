@@ -162,7 +162,7 @@ export function DashboardOverview() {
                 <ChartContainer>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Tooltip content={<ChartTooltipContent />} formatter={(value: number) => Number(value).toLocaleString()} />
+                      <Tooltip content={<ChartTooltipContent />} formatter={(value) => Number(value ?? 0).toLocaleString()} />
                       <Pie data={data.inventoryStatus} dataKey="value" nameKey="name" innerRadius={52} outerRadius={100}>
                         {data.inventoryStatus.map((entry) => (
                           <Cell key={entry.name} fill={entry.fill} />
@@ -192,7 +192,7 @@ export function DashboardOverview() {
                 <ChartContainer className="pb-6 sm:pb-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Tooltip content={<ChartTooltipContent />} formatter={(value: number) => Number(value).toLocaleString()} />
+                      <Tooltip content={<ChartTooltipContent />} formatter={(value) => Number(value ?? 0).toLocaleString()} />
                       <Legend wrapperStyle={{ paddingTop: 20 }} />
                       <Pie data={data.orderStatus} dataKey="value" nameKey="name" innerRadius={70} outerRadius={105}>
                         {data.orderStatus.map((entry) => (
@@ -243,7 +243,7 @@ export function DashboardOverview() {
                     <Tooltip
                       content={<ChartTooltipContent />}
                       labelFormatter={(label) => formatMonthShort(String(label))}
-                      formatter={(value: number) => currencyFormatter.format(Number(value))}
+                      formatter={(value) => currencyFormatter.format(Number(value ?? 0))}
                     />
                     <Legend />
                     <Line type="monotone" dataKey="revenue" name="Revenue" stroke={DASHBOARD_CHART_COLORS[0]} strokeWidth={2} dot={false} />
@@ -280,7 +280,7 @@ export function DashboardOverview() {
                       tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
                       tickFormatter={(value) => truncateLabel(String(value), 28)}
                     />
-                    <Tooltip content={<ChartTooltipContent />} formatter={(value: number) => currencyFormatter.format(Number(value))} />
+                    <Tooltip content={<ChartTooltipContent />} formatter={(value) => currencyFormatter.format(Number(value ?? 0))} />
                     <Bar dataKey="revenue" name="Revenue" fill={DASHBOARD_CHART_COLORS[4]} radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -304,7 +304,7 @@ export function DashboardOverview() {
                 <ChartContainer>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Tooltip content={<ChartTooltipContent />} formatter={(value: number) => currencyFormatter.format(Number(value))} />
+                      <Tooltip content={<ChartTooltipContent />} formatter={(value) => currencyFormatter.format(Number(value ?? 0))} />
                       <Pie data={data.categoryMix} dataKey="value" nameKey="name" innerRadius={45} outerRadius={102}>
                         {data.categoryMix.map((entry) => (
                           <Cell key={entry.name} fill={entry.fill} />

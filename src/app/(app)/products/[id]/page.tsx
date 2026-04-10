@@ -65,8 +65,8 @@ export default function ProductDetailPage() {
   React.useEffect(() => {
     setLoading(true)
     getResource<Product>(`/products/${params.id}`)
-      .then(setProduct)
       .then((data) => {
+        setProduct(data)
         setName(data.name)
         setDescription(data.description ?? "")
       })
