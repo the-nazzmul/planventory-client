@@ -1,8 +1,9 @@
 import axios from "axios"
+import type { InternalAxiosRequestConfig } from "axios"
 
 import { API_BASE_URL } from "@/lib/config"
-import { clearAuthStorage, getStoredAccessToken, setStoredAccessToken } from "@/lib/auth-storage"
-import type { ApiEnvelope, ApiFailureEnvelope } from "@/lib/types"
+import { clearAuthStorage, getStoredAccessToken, setStoredAccessToken, setStoredUser } from "@/lib/auth-storage"
+import type { ApiEnvelope, ApiFailureEnvelope, AuthUser } from "@/lib/types"
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -21,17 +22,80 @@ function extractErrorMessage(error: unknown) {
   return "Request failed"
 }
 
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const withStart: InternalAxiosRequestConfig & { metadata?: { start: number } } = config
+  withStart.metadata = { start: Date.now() }
   const token = getStoredAccessToken()
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    withStart.headers.Authorization = `Bearer ${token}`
   }
-  return config
+  return withStart
 })
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const cfg = response.config as InternalAxiosRequestConfig & { metadata?: { start: number } }
+    const start = cfg.metadata?.start
+    if (start) {
+      const duration = Date.now() - start
+      // #region agent log
+      fetch("http://127.0.0.1:7798/ingest/ed65df61-9d62-411d-9ce6-72c29c10e956", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Debug-Session-Id": "103bcd",
+        },
+        body: JSON.stringify({
+          sessionId: "103bcd",
+          runId: "post-fix",
+          hypothesisId: "C",
+          location: "api-client.ts:response-ok",
+          message: "api response",
+          data: {
+            path: cfg.url ?? "",
+            method: cfg.method,
+            durationMs: duration,
+            status: response.status,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {})
+      // #endregion
+    }
+    return response
+  },
   async (error) => {
+    if (axios.isAxiosError(error) && error.config) {
+      const cfg = error.config as InternalAxiosRequestConfig & { metadata?: { start: number } }
+      const start = cfg.metadata?.start
+      if (start) {
+        const duration = Date.now() - start
+        // #region agent log
+        fetch("http://127.0.0.1:7798/ingest/ed65df61-9d62-411d-9ce6-72c29c10e956", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "103bcd",
+          },
+          body: JSON.stringify({
+            sessionId: "103bcd",
+            runId: "post-fix",
+            hypothesisId: "E",
+            location: "api-client.ts:response-err",
+            message: "api error",
+            data: {
+              path: cfg.url ?? "",
+              method: cfg.method,
+              durationMs: duration,
+              status: error.response?.status ?? null,
+              code: error.code ?? null,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {})
+        // #endregion
+      }
+    }
     if (!axios.isAxiosError(error)) {
       return Promise.reject(error)
     }
@@ -48,10 +112,16 @@ apiClient.interceptors.response.use(
       if (!isRefreshing) {
         isRefreshing = true
         refreshPromise = apiClient
-          .post<ApiEnvelope<{ accessToken: string }>>("/auth/refresh")
+          .post<ApiEnvelope<{ accessToken: string; user?: AuthUser }>>("/auth/refresh", undefined, {
+            timeout: 45_000,
+          })
           .then((response) => {
             const token = response.data.data.accessToken
             setStoredAccessToken(token)
+            const nextUser = response.data.data.user
+            if (nextUser) {
+              setStoredUser(nextUser)
+            }
             return token
           })
           .finally(() => {

@@ -80,6 +80,7 @@ export const DataPageShell = React.forwardRef<
 ) {
   const { toast } = useToast();
   const [query, setQuery] = React.useState("");
+  const [debouncedQuery, setDebouncedQuery] = React.useState("");
   const [items, setItems] = React.useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [toDelete, setToDelete] = React.useState<string | null>(null);
@@ -95,13 +96,19 @@ export const DataPageShell = React.forwardRef<
   const [sortBy, setSortBy] = React.useState(columns[0]?.header ?? "");
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
 
+  React.useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQuery(query), 350);
+    return () => window.clearTimeout(t);
+  }, [query]);
+
   const load = React.useCallback(
     async (nextCursor?: string | null) => {
+      const loadStart = Date.now();
       try {
         setLoading(true);
         const result = await getCollection<Record<string, unknown>>(listPath, {
           cursor: nextCursor ?? undefined,
-          search: query || undefined,
+          search: debouncedQuery || undefined,
           limit,
         });
         setItems(result.items);
@@ -109,7 +116,54 @@ export const DataPageShell = React.forwardRef<
         setCursor(result.meta.cursor);
         setTotal(result.meta.total);
         setCurrentPageCursor(nextCursor ?? null);
+        // #region agent log
+        fetch("http://127.0.0.1:7798/ingest/ed65df61-9d62-411d-9ce6-72c29c10e956", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "103bcd",
+          },
+          body: JSON.stringify({
+            sessionId: "103bcd",
+            runId: "post-fix",
+            hypothesisId: "D",
+            location: "data-page-shell.tsx:load-ok",
+            message: "list load ok",
+            data: {
+              listPath,
+              searchLen: debouncedQuery.length,
+              hasCursor: Boolean(nextCursor),
+              durationMs: Date.now() - loadStart,
+              itemCount: result.items.length,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
       } catch (error) {
+        // #region agent log
+        fetch("http://127.0.0.1:7798/ingest/ed65df61-9d62-411d-9ce6-72c29c10e956", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "103bcd",
+          },
+          body: JSON.stringify({
+            sessionId: "103bcd",
+            runId: "post-fix",
+            hypothesisId: "D",
+            location: "data-page-shell.tsx:load-err",
+            message: "list load failed",
+            data: {
+              listPath,
+              searchLen: debouncedQuery.length,
+              durationMs: Date.now() - loadStart,
+              err: error instanceof Error ? error.message : "unknown",
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         toast({
           title: `Failed to load ${title.toLowerCase()}`,
           description:
@@ -120,7 +174,7 @@ export const DataPageShell = React.forwardRef<
         setLoading(false);
       }
     },
-    [listPath, query, title, toast, limit],
+    [listPath, debouncedQuery, title, toast, limit],
   );
 
   React.useEffect(() => {

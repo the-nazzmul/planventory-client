@@ -23,9 +23,14 @@ export async function login(payload: LoginPayload) {
 
 export async function refreshSession() {
   const data = await unwrapEnvelope(
-    apiClient.post<ApiEnvelope<{ accessToken: string }>>("/auth/refresh"),
+    apiClient.post<ApiEnvelope<{ accessToken: string; user?: AuthUser }>>("/auth/refresh", undefined, {
+      timeout: 45_000,
+    }),
   )
   setStoredAccessToken(data.accessToken)
+  if (data.user) {
+    setStoredUser(data.user)
+  }
   return data.accessToken
 }
 

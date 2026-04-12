@@ -19,5 +19,5 @@ export type AuthUser = {
   id: string
   email: string
   name: string
-  role: "SUPER_ADMIN" | "MANAGER" | "STAFF"
+  role: "SUPER_ADMIN" | "MANAGER" | "WAREHOUSE"
 }
